@@ -1,0 +1,43 @@
+﻿Build started 22/07/2014 00:08:53.
+     1>Project "C:\Users\Brennan\Documents\Visual Studio 2012\Projects\MEngine\MEngine\MEngine.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /Oy- /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt App.cpp Controls.cpp D3DGraphics.cpp WinMain.cpp
+         D3DGraphics.cpp
+     1>c:\program files (x86)\microsoft sdks\windows\v7.0a\include\sal_supp.h(57): warning C4005: '__useHeader' : macro redefinition
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\sal.h(2872) : see previous definition of '__useHeader'
+     1>c:\program files (x86)\microsoft sdks\windows\v7.0a\include\specstrings_supp.h(77): warning C4005: '__on_failure' : macro redefinition
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\sal.h(2882) : see previous definition of '__on_failure'
+     1>c:\users\brennan\documents\visual studio 2012\projects\mengine\mengine\d3dgraphics.cpp(3): warning C4005: '_DEBUG' : macro redefinition
+                 command-line arguments :  see previous definition of '_DEBUG'
+         Generating Code...
+         Compiling...
+         App.cpp
+     1>c:\program files (x86)\microsoft sdks\windows\v7.0a\include\sal_supp.h(57): warning C4005: '__useHeader' : macro redefinition
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\sal.h(2872) : see previous definition of '__useHeader'
+     1>c:\program files (x86)\microsoft sdks\windows\v7.0a\include\specstrings_supp.h(77): warning C4005: '__on_failure' : macro redefinition
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\sal.h(2882) : see previous definition of '__on_failure'
+         Generating Code...
+         Compiling...
+         WinMain.cpp
+     1>c:\program files (x86)\microsoft sdks\windows\v7.0a\include\sal_supp.h(57): warning C4005: '__useHeader' : macro redefinition
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\sal.h(2872) : see previous definition of '__useHeader'
+     1>c:\program files (x86)\microsoft sdks\windows\v7.0a\include\specstrings_supp.h(77): warning C4005: '__on_failure' : macro redefinition
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\sal.h(2882) : see previous definition of '__on_failure'
+         Controls.cpp
+     1>c:\program files (x86)\microsoft sdks\windows\v7.0a\include\sal_supp.h(57): warning C4005: '__useHeader' : macro redefinition
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\sal.h(2872) : see previous definition of '__useHeader'
+     1>c:\program files (x86)\microsoft sdks\windows\v7.0a\include\specstrings_supp.h(77): warning C4005: '__on_failure' : macro redefinition
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\sal.h(2882) : see previous definition of '__on_failure'
+         Generating Code...
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\Brennan\Documents\Visual Studio 2012\Projects\MEngine\Debug\MEngine.exe" /INCREMENTAL /NOLOGO D3DX11.lib d3d11.lib D3DCompiler.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\Brennan\Documents\Visual Studio 2012\Projects\MEngine\Debug\MEngine.pdb" /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\Brennan\Documents\Visual Studio 2012\Projects\MEngine\Debug\MEngine.lib" /MACHINE:X86 Debug\App.obj
+         Debug\Controls.obj
+         Debug\D3DGraphics.obj
+         Debug\DXUtil.obj
+         Debug\WinMain.obj
+         MEngine.vcxproj -> C:\Users\Brennan\Documents\Visual Studio 2012\Projects\MEngine\Debug\MEngine.exe
+     1>Done Building Project "C:\Users\Brennan\Documents\Visual Studio 2012\Projects\MEngine\MEngine\MEngine.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:28.93
