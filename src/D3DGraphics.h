@@ -39,6 +39,8 @@ class D3DGraphics {
 		ID3D11Texture2D *depthStencilBuffer;
 		ID3D11Buffer *perObjectBuffer;
 		ID3D11RasterizerState *WireFrame;
+		ID3D11ShaderResourceView *cubeTexture;
+		ID3D11SamplerState *cubeSampleState;
 
 		XMMATRIX WVP;
 		XMMATRIX World;

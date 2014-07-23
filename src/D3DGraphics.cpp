@@ -8,11 +8,11 @@ struct Vertex	//Overloaded Vertex Structure
 {
 	Vertex(){}
 	Vertex(float x, float y, float z,
-		float cr, float cg, float cb, float ca)
-		: pos(x,y,z), color(cr, cg, cb, ca){}
+		 float u, float v)
+		: pos(x,y,z), texCoord(u, v){}
 
 	XMFLOAT3 pos;
-	XMFLOAT4 color;
+	XMFLOAT2 texCoord;
 };
 
 struct perObject
@@ -27,7 +27,7 @@ float oheight = 0.0f;
 
 D3DGraphics::D3DGraphics() : m_pSwapChain(NULL), m_pDevice(NULL), m_pDeviceContext(NULL), m_pVertBuffer(NULL),
 							 VS(NULL), PS(NULL), InputLayout(NULL), VertexBlob(NULL), PixelBlob(NULL), depthStencilView(NULL), 
-							 depthStencilBuffer(NULL), WireFrame(NULL)  {}
+							 depthStencilBuffer(NULL), WireFrame(NULL), cubeTexture(NULL), cubeSampleState(NULL)  {}
 
 bool D3DGraphics::RunDirectX(HWND hwnd, int width, int height, bool fullscreen, bool wireframe)
 {
@@ -131,6 +131,29 @@ bool D3DGraphics::RunDirectX(HWND hwnd, int width, int height, bool fullscreen, 
 
 	camProjection = XMMatrixPerspectiveFovLH(0.4f*3.14f, (float)width/height, 1.0f, 1000.0f);
 
+	if(FAILED(D3DX11CreateShaderResourceViewFromFile(m_pDevice, "pls.jpg", NULL, NULL, &cubeTexture, NULL)))
+		return S_FALSE;
+
+	D3D11_SAMPLER_DESC sampDesc;
+	ZeroMemory(&sampDesc, sizeof(D3D11_SAMPLER_DESC));
+
+	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	sampDesc.MinLOD = 0;
+	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	sampDesc.BorderColor[0] = 1.0f;
+	sampDesc.BorderColor[1] = 0.0f;
+	sampDesc.BorderColor[2] = 1.0f;
+	sampDesc.BorderColor[3] = 1.0f;
+
+	
+
+	if(FAILED(m_pDevice->CreateSamplerState(&sampDesc, &cubeSampleState)))
+		return S_FALSE;
+
 	//Useful for debug. Render the cubes in wireframe state.
 	if(wireframe)
 	{
@@ -189,7 +212,7 @@ bool D3DGraphics::InitScene()
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },  
-		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 	UINT NumLayout = ARRAYSIZE(layout);
 
@@ -214,21 +237,48 @@ bool D3DGraphics::InitScene()
 
 	Vertex v[] =
 	{
-		Vertex( -1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 0.0f, 1.0f ),
-		Vertex( -1.0f, +1.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f ),
-		Vertex( +1.0f, +1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f ),
-		Vertex( +1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 0.0f, 1.0f ),
-		Vertex( -1.0f, -1.0f, +1.0f, 0.0f, 1.0f, 1.0f, 1.0f ),
-		Vertex( -1.0f, +1.0f, +1.0f, 1.0f, 1.0f, 1.0f, 1.0f ),
-		Vertex( +1.0f, +1.0f, +1.0f, 1.0f, 0.0f, 1.0f, 1.0f ),
-		Vertex( +1.0f, -1.0f, +1.0f, 1.0f, 0.0f, 0.0f, 1.0f ),
+		// Front Face
+		Vertex(-1.0f, -1.0f, -1.0f, 0.0f, 1.0f),
+		Vertex(-1.0f,  1.0f, -1.0f, 0.0f, 0.0f),
+		Vertex( 1.0f,  1.0f, -1.0f, 1.0f, 0.0f),
+		Vertex( 1.0f, -1.0f, -1.0f, 1.0f, 1.0f),
+
+		// Back Face
+		Vertex(-1.0f, -1.0f, 1.0f, 1.0f, 1.0f),
+		Vertex( 1.0f, -1.0f, 1.0f, 0.0f, 1.0f),
+		Vertex( 1.0f,  1.0f, 1.0f, 0.0f, 0.0f),
+		Vertex(-1.0f,  1.0f, 1.0f, 1.0f, 0.0f),
+
+		// Top Face
+		Vertex(-1.0f, 1.0f, -1.0f, 0.0f, 1.0f),
+		Vertex(-1.0f, 1.0f,  1.0f, 0.0f, 0.0f),
+		Vertex( 1.0f, 1.0f,  1.0f, 1.0f, 0.0f),
+		Vertex( 1.0f, 1.0f, -1.0f, 1.0f, 1.0f),
+
+		// Bottom Face
+		Vertex(-1.0f, -1.0f, -1.0f, 1.0f, 1.0f),
+		Vertex( 1.0f, -1.0f, -1.0f, 0.0f, 1.0f),
+		Vertex( 1.0f, -1.0f,  1.0f, 0.0f, 0.0f),
+		Vertex(-1.0f, -1.0f,  1.0f, 1.0f, 0.0f),
+
+		// Left Face
+		Vertex(-1.0f, -1.0f,  1.0f, 0.0f, 1.0f),
+		Vertex(-1.0f,  1.0f,  1.0f, 0.0f, 0.0f),
+		Vertex(-1.0f,  1.0f, -1.0f, 1.0f, 0.0f),
+		Vertex(-1.0f, -1.0f, -1.0f, 1.0f, 1.0f),
+
+		// Right Face
+		Vertex( 1.0f, -1.0f, -1.0f, 0.0f, 1.0f),
+		Vertex( 1.0f,  1.0f, -1.0f, 0.0f, 0.0f),
+		Vertex( 1.0f,  1.0f,  1.0f, 1.0f, 0.0f),
+		Vertex( 1.0f, -1.0f,  1.0f, 1.0f, 1.0f),
 	};
 
 	D3D11_BUFFER_DESC VertexBuffer;
 	ZeroMemory(&VertexBuffer, sizeof(VertexBuffer));
 
 	VertexBuffer.Usage = D3D11_USAGE_DEFAULT;
-	VertexBuffer.ByteWidth = sizeof(Vertex) * 8;
+	VertexBuffer.ByteWidth = sizeof(Vertex) * 24;
 	VertexBuffer.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	VertexBuffer.CPUAccessFlags = 0;
 	VertexBuffer.MiscFlags = 0;
@@ -242,29 +292,29 @@ bool D3DGraphics::InitScene()
 		return false;
 
 	DWORD indices[] = {
-		// front face
-		0, 1, 2,
-		0, 2, 3,
+		// Front Face
+		0,  1,  2,
+		0,  2,  3,
 
-		// back face
-		4, 6, 5,
-		4, 7, 6,
+		// Back Face
+		4,  5,  6,
+		4,  6,  7,
 
-		// left face
-		4, 5, 1,
-		4, 1, 0,
+		// Top Face
+		8,  9, 10,
+		8, 10, 11,
 
-		// right face
-		3, 2, 6,
-		3, 6, 7,
+		// Bottom Face
+		12, 13, 14,
+		12, 14, 15,
 
-		// top face
-		1, 5, 6,
-		1, 6, 2,
+		// Left Face
+		16, 17, 18,
+		16, 18, 19,
 
-		// bottom face
-		4, 0, 3, 
-		4, 3, 7
+		// Right Face
+		20, 21, 22,
+		20, 22, 23
 	};
 
 	D3D11_BUFFER_DESC indexBufferDesc;
@@ -332,7 +382,7 @@ void D3DGraphics::UpdateScene()
 
 void D3DGraphics::Render()
 {
-	float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	float ClearColor[4] = { 0.0f, 0.125f, 0.6f, 1.0f };
 	m_pDeviceContext->ClearRenderTargetView(m_pRenderTarget, ClearColor);
 	m_pDeviceContext->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL, 1.0f, 0);
 	m_pDeviceContext->VSSetShader( VS, NULL, 0 );
@@ -345,6 +395,9 @@ void D3DGraphics::Render()
 	m_pDeviceContext->UpdateSubresource(perObjectBuffer, 0, NULL, &perObj, 0, 0);
 	m_pDeviceContext->VSSetConstantBuffers(0, 1, &perObjectBuffer);
 
+	m_pDeviceContext->PSSetShaderResources(0, 1, &cubeTexture);
+	m_pDeviceContext->PSSetSamplers(0, 1, &cubeSampleState);
+
 	m_pDeviceContext->DrawIndexed( 36, 0, 0 );
 	
 	WVP = cube2 * camView * camProjection;
@@ -353,6 +406,9 @@ void D3DGraphics::Render()
 
 	m_pDeviceContext->UpdateSubresource(perObjectBuffer, 0, NULL, &perObj, 0, 0);
 	m_pDeviceContext->VSSetConstantBuffers(0, 1, &perObjectBuffer);
+
+	m_pDeviceContext->PSSetShaderResources(0, 1, &cubeTexture);
+	m_pDeviceContext->PSSetSamplers(0, 1, &cubeSampleState);
 
 	m_pDeviceContext->DrawIndexed( 36, 0, 0 );
 
