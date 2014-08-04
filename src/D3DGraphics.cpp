@@ -23,11 +23,11 @@ struct perObject
 perObject perObj;
 
 float rot = 0.01f;
-float oheight = 0.0f;
 
 D3DGraphics::D3DGraphics() : m_pSwapChain(NULL), m_pDevice(NULL), m_pDeviceContext(NULL), m_pVertBuffer(NULL),
 							 VS(NULL), PS(NULL), InputLayout(NULL), VertexBlob(NULL), PixelBlob(NULL), depthStencilView(NULL), 
-							 depthStencilBuffer(NULL), WireFrame(NULL), cubeTexture(NULL), cubeSampleState(NULL)  {}
+							 depthStencilBuffer(NULL), WireFrame(NULL), cubeTexture(NULL), cubeSampleState(NULL),
+							 CCCullmode(NULL), CWCullmode(NULL), Transparency(NULL), noCull(NULL) {}
 
 bool D3DGraphics::RunDirectX(HWND hwnd, int width, int height, bool fullscreen, bool wireframe)
 {
@@ -138,16 +138,12 @@ bool D3DGraphics::RunDirectX(HWND hwnd, int width, int height, bool fullscreen, 
 	ZeroMemory(&sampDesc, sizeof(D3D11_SAMPLER_DESC));
 
 	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
-	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
-	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
 	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
 	sampDesc.MinLOD = 0;
 	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
-	sampDesc.BorderColor[0] = 1.0f;
-	sampDesc.BorderColor[1] = 0.0f;
-	sampDesc.BorderColor[2] = 1.0f;
-	sampDesc.BorderColor[3] = 1.0f;
 
 	
 
@@ -168,6 +164,14 @@ bool D3DGraphics::RunDirectX(HWND hwnd, int width, int height, bool fullscreen, 
 
 		m_pDeviceContext->RSSetState(WireFrame);
 	}
+
+	D3D11_RASTERIZER_DESC Rastdesc;
+	ZeroMemory(&Rastdesc, sizeof(D3D11_RASTERIZER_DESC));
+
+	Rastdesc.FillMode = D3D11_FILL_SOLID;
+	Rastdesc.CullMode = D3D11_CULL_NONE;
+
+	m_pDevice->CreateRasterizerState(&Rastdesc, &noCull);
 	
 	D3D11_VIEWPORT vp;
 	vp.Height = (FLOAT)height;
@@ -184,6 +188,7 @@ bool D3DGraphics::RunDirectX(HWND hwnd, int width, int height, bool fullscreen, 
 		DestroyWindow(hwnd);
 		return false;
 	}
+
 	SetActiveWindow(hwnd);
 
 	return true;
@@ -340,6 +345,42 @@ bool D3DGraphics::InitScene()
 
 	m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
+	D3D11_BLEND_DESC blenddesc;
+	ZeroMemory(&blenddesc, sizeof(D3D11_BLEND_DESC));
+
+	D3D11_RENDER_TARGET_BLEND_DESC rtbd;
+	ZeroMemory(&rtbd, sizeof(D3D11_RENDER_TARGET_BLEND_DESC));
+
+	rtbd.BlendEnable = true;
+	rtbd.SrcBlend = D3D11_BLEND_SRC_COLOR;
+	rtbd.DestBlend = D3D11_BLEND_BLEND_FACTOR;
+	rtbd.BlendOp = D3D11_BLEND_OP_ADD;
+	rtbd.SrcBlendAlpha = D3D11_BLEND_ONE;
+	rtbd.DestBlendAlpha = D3D11_BLEND_ZERO;
+	rtbd.BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	rtbd.RenderTargetWriteMask = D3D10_COLOR_WRITE_ENABLE_ALL;
+
+	blenddesc.AlphaToCoverageEnable = false;
+	blenddesc.RenderTarget[0] = rtbd;
+
+	m_pDevice->CreateBlendState(&blenddesc, &Transparency);
+
+	D3D11_RASTERIZER_DESC cmdesc;
+	ZeroMemory(&cmdesc, sizeof(D3D11_RASTERIZER_DESC));
+
+	cmdesc.FillMode = D3D11_FILL_SOLID;
+	cmdesc.CullMode = D3D11_CULL_BACK;
+
+	cmdesc.FrontCounterClockwise = true;
+
+	if (FAILED(m_pDevice->CreateRasterizerState(&cmdesc, &CCCullmode)))
+		return S_FALSE;
+
+	cmdesc.FrontCounterClockwise = false;
+
+	if (FAILED(m_pDevice->CreateRasterizerState(&cmdesc, &CWCullmode)))
+		return S_FALSE;
+
 	return true;
 }
 
@@ -364,10 +405,10 @@ void D3DGraphics::UpdateScene()
 	Translation = XMMatrixTranslation(0.0f, 0.0f, 4.0f);
 
 	cube1 = Translation * Rotation;
-
+	
 	//clear the cube2 matrix
 	cube2 = XMMatrixIdentity();
-
+	
 	//assign rotaxis a new value. cube2 will rotate on it's x and z axis to give a spinning effect
 	rotaxis = XMVectorSet(1.0f, 0.0f, 1.0f, 0.0f);
 
@@ -377,14 +418,59 @@ void D3DGraphics::UpdateScene()
 	Scale = XMMatrixScaling(1.3f, 1.3f, 1.3f);
 
 	cube2 = Rotation * Scale;
-
+	
 }
 
 void D3DGraphics::Render()
 {
-	float ClearColor[4] = { 0.0f, 0.125f, 0.6f, 1.0f };
+	float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	m_pDeviceContext->ClearRenderTargetView(m_pRenderTarget, ClearColor);
 	m_pDeviceContext->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+
+	m_pDeviceContext->RSSetState(NULL);
+	//render objects using backface culling
+
+	m_pDeviceContext->RSSetState(noCull);
+
+	float blendfactor[] = { 0.75f, 0.75f, 0.75f, 1.0f };
+
+	m_pDeviceContext->OMSetBlendState(0, 0, 0xffffffff);
+
+	//opaque objects
+
+	m_pDeviceContext->OMSetBlendState(Transparency, blendfactor, 0xffffffff);
+
+	XMVECTOR cubepos = XMVectorZero();
+
+	cubepos = XMVector3TransformCoord(cubepos, cube1);
+
+	float distx = XMVectorGetX(cubepos) - XMVectorGetX(camPos);
+	float disty = XMVectorGetY(cubepos) - XMVectorGetY(camPos);
+	float distz = XMVectorGetZ(cubepos) - XMVectorGetZ(camPos);
+
+	float cube1Pos = distx*distx + disty*disty + distz*distz;
+
+
+	cubepos = XMVectorZero();
+
+	cubepos = XMVector3TransformCoord(cubepos, cube2);
+
+	distx = XMVectorGetX(cubepos) - XMVectorGetX(camPos);
+	disty = XMVectorGetY(cubepos) - XMVectorGetY(camPos);
+	distz = XMVectorGetZ(cubepos) - XMVectorGetZ(camPos);
+
+	float cube2Pos = distx*distx + disty*disty + distz*distz;
+
+
+	if (cube1Pos < cube2Pos)
+	{
+		//cube one is in front
+		XMMATRIX temp = cube1;
+		cube1 = cube2;
+		cube2 = temp;
+	}
+
 	m_pDeviceContext->VSSetShader( VS, NULL, 0 );
 	m_pDeviceContext->PSSetShader( PS, NULL, 0 );
 
@@ -398,8 +484,14 @@ void D3DGraphics::Render()
 	m_pDeviceContext->PSSetShaderResources(0, 1, &cubeTexture);
 	m_pDeviceContext->PSSetSamplers(0, 1, &cubeSampleState);
 
+	m_pDeviceContext->RSSetState(CCCullmode);
+
 	m_pDeviceContext->DrawIndexed( 36, 0, 0 );
 	
+	m_pDeviceContext->RSSetState(CWCullmode);
+
+	m_pDeviceContext->DrawIndexed(36, 0, 0);
+
 	WVP = cube2 * camView * camProjection;
 
 	perObj.WVP = XMMatrixTranspose(WVP);
@@ -410,13 +502,16 @@ void D3DGraphics::Render()
 	m_pDeviceContext->PSSetShaderResources(0, 1, &cubeTexture);
 	m_pDeviceContext->PSSetSamplers(0, 1, &cubeSampleState);
 
+	m_pDeviceContext->RSSetState(CCCullmode);
+
+	m_pDeviceContext->DrawIndexed(36, 0, 0);
+
+	m_pDeviceContext->RSSetState(CWCullmode);
+
 	m_pDeviceContext->DrawIndexed( 36, 0, 0 );
 
-	
-
-	
-
 	m_pSwapChain->Present(0, 0);
+
 }
 
 void D3DGraphics::CleanUp()
@@ -435,4 +530,10 @@ void D3DGraphics::CleanUp()
 	Memory::Release(depthStencilBuffer);
 	Memory::Release(perObjectBuffer);
 	Memory::Release(WireFrame);
+	Memory::Release(cubeTexture);
+	Memory::Release(cubeSampleState);
+	Memory::Release(CCCullmode);
+	Memory::Release(CWCullmode);
+	Memory::Release(Transparency);
+	Memory::Release(noCull);
 }

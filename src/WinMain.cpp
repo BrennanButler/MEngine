@@ -1,14 +1,35 @@
+/*
+	What's needed:
+
+		Loading and caching game data
+		Interface/GUI 
+		Event managment
+		Scripting?
+		Audio
+		Physics
+		Network/multiplayer
+		AI
+		Debugging
+		Memory managment
+		3D & 2D rendering
+*/
+
 #include "App.h"
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+	if (wParam == VK_ESCAPE)
+		DestroyWindow(hwnd);
 	switch(msg)
 	{
+		case WM_CLOSE:
+			DestroyWindow(hwnd);
+			break;
 		case WM_DESTROY:
 			PostQuitMessage(0);
-		return 0;
-
-		default: return DefWindowProc(hwnd, msg, wParam, lParam);
+			break;
+		default:
+			return DefWindowProc(hwnd, msg, wParam, lParam);
 	}
 	return 0;
 }
@@ -40,6 +61,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		MessageBox(NULL, "Failed to create window", "ERROR", MB_OK);
 		return 0;
 	}
+
+	MessageBox(NULL, "There is a bug in which you'll need to end this process in the task manager.", "bug", MB_OK);
 
 	return Application.Run();
 }

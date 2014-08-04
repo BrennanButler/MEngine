@@ -10,6 +10,7 @@
 #include <D3Dcompiler.h>
 #include <xnamath.h>
 #include "DXUtil.cpp"
+#include <string>
 
 class D3DGraphics {
 
@@ -41,6 +42,10 @@ class D3DGraphics {
 		ID3D11RasterizerState *WireFrame;
 		ID3D11ShaderResourceView *cubeTexture;
 		ID3D11SamplerState *cubeSampleState;
+		ID3D11RasterizerState *CCCullmode;
+		ID3D11RasterizerState *CWCullmode;
+		ID3D11BlendState *Transparency;
+		ID3D11RasterizerState *noCull;
 
 		XMMATRIX WVP;
 		XMMATRIX World;
