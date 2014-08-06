@@ -38,12 +38,15 @@ int App::Run()
 {
 	MSG msg = {0};
 
-	while(msg.message != WM_QUIT)
+	while(true)
 	{
-		if(PeekMessage(&msg, m_pHwnd, NULL, NULL, PM_REMOVE))
+		if(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
+
+			if (msg.message == WM_QUIT)
+				break;
 		}
 		else
 		{

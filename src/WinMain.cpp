@@ -62,7 +62,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		return 0;
 	}
 
-	MessageBox(NULL, "There is a bug in which you'll need to end this process in the task manager.", "bug", MB_OK);
 
 	return Application.Run();
 }
